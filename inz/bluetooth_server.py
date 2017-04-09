@@ -1,50 +1,78 @@
 from inz.coordinates import Coordinates
 from bluetooth import *
+import time
 
-server_sock = BluetoothSocket(RFCOMM)
-server_sock.bind(("", PORT_ANY))
-server_sock.listen(1)
+_UUID = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
-port = server_sock.getsockname()[1]
 
-yacht_coordinates = Coordinates()
-buoy_coordinates = Coordinates()
+class BluetoothServer:
+    """ This class represents server in bluetooth communication."""
 
-uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+    def __init__(self, yacht_coordinates, buoy_coordinates):
+        """ This function initializes communication between server and client.
 
-advertise_service(server_sock, "TestServer",
-                  service_id=uuid,
-                  service_classes=[uuid, SERIAL_PORT_CLASS],
-                  profiles=[SERIAL_PORT_PROFILE])
+        :param yacht_coordinates: represents coordinates of a yacht received from client's application
+        :param buoy_coordinates: represents coordinates of detected buoy
+        """
 
-print("Waiting for connection on RFCOMM channel %d" % port)
-client_sock, client_info = server_sock.accept()
-print("Accepted connection from ", client_info)
+        self.yacht_coordinates = yacht_coordinates
+        self.buoy_coordinates = buoy_coordinates
 
-while True:
-    try:
-        req = client_sock.recv(1024)
-        type(req)
-        if len(req) == 0:
-            break
-        yacht_coordinates.set_coordinates([float(req.split()[0]), float(req.split()[1])])
-        buoy_coordinates.set_random_buoy_coordinates(yacht_coordinates)
-        print(yacht_coordinates)
-        data = str(buoy_coordinates)
-        print(data)
-        if data:
-            print("sending [%s]" % data)
-            client_sock.send(data)
+        # initialize socket using Radio Frequency Communication protocol
+        self.server_sock = BluetoothSocket(RFCOMM)
+        # bind server socket to any port
+        self.server_sock.bind(("", PORT_ANY))
+        # listening on binded socket
+        self.server_sock.listen(1)
+        # return port number on which server socket is bound
+        self.port = self.server_sock.getsockname()[1]
 
-    except IOError:
-        print("IOERROR")
+        # spread out bluetooth server
+        advertise_service(self.server_sock, "YachtRacingSupport bluetooth server",
+                          service_id=_UUID,
+                          service_classes=[_UUID, SERIAL_PORT_CLASS],
+                          profiles=[SERIAL_PORT_PROFILE])
 
-    except KeyboardInterrupt:
+        print("Waiting for connection on RFCOMM channel %d" % self.port)
+        self.client_sock, client_info = self.server_sock.accept()
+        print("Accepted connection from ", client_info)
 
-        print("disconnected")
+    def handle_data(self):
+        """ This function handles data which are exchanged in bluetooth communication.
 
-        client_sock.close()
-        server_sock.close()
-        print("all done")
+        Received data are construed as yacht's longitude, latitude and azimuth.
+        Sent data are coordinates of a buoy detected on camera image.
+        """
+        while True:
+            try:
+                # receive data from client socket
+                req = self.client_sock.recv(1024)
 
-        break
+                # break if there is no data
+                if len(req) == 0:
+                    break
+
+                # split received data
+                req = req.split()
+                # set yacht coordinates with received data
+                self.yacht_coordinates.set_coordinates([float(req[0]), float(req[1])], float(req[2]))
+                # set buoy coordinates with yacht coordinates with random generated shift
+                self.buoy_coordinates.set_random_buoy_coordinates(self.yacht_coordinates)
+                # prepare data to send
+                data = str(self.buoy_coordinates)
+                # if buoy coordinates exist (buoy has been detected)
+                if data:
+                    # sending buoy coordinates
+                    self.client_sock.send(data)
+                # force thread sleep
+                time.sleep(1)
+
+            except IOError:
+                # Input/Output error!
+                print("IOERROR")
+
+            except KeyboardInterrupt:
+                # Closing sockets.
+                self.client_sock.close()
+                self.server_sock.close()
+                break
