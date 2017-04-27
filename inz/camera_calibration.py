@@ -21,7 +21,6 @@ print(images)
 for fname in images:
     img = cv2.imread(fname)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cv2.imshow('gray', gray)
     # Znajdź wierzchołki szachownicy
     ret, corners = cv2.findChessboardCorners(gray, (9, 7), None)
     # Jeżeli znaleziono, dodaj punkty obiektu, punkty obrazu (po zwiększeniu przybliżenia)
@@ -32,11 +31,25 @@ for fname in images:
         imgpoints.append(corners2)
         print("Before show")
         img = cv2.drawChessboardCorners(img, (9, 7), corners2, ret)
-        cv2.imshow('img', img)
+        # cv2.imshow('img', img)
 
     cv2.waitKey(500)
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+
+img = cv2.imread('coordination_images/image1.jpg')
+
+h, w = img.shape[:2]
+newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+
+
+# undistort
+dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+
+# crop the image
+x, y, w, h = roi
+dst = dst[y:y+h, x:x+w]
+cv2.imwrite('calibresult.png', dst)
 
 print(ret, mtx, dist, rvecs, tvecs)
 
