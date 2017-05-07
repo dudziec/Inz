@@ -110,7 +110,7 @@ class SelectTemplate(QWidget):
     in order to calculate distance on video.
     """
 
-    def __init__(self, yacht_coordinates, buoy_coordinates):
+    def __init__(self, yacht_coordinates, buoy_coordinates, calibration_coefficients):
         """ Object initializer.
 
 
@@ -120,6 +120,7 @@ class SelectTemplate(QWidget):
 
         self.yacht_coordinates = yacht_coordinates
         self.buoy_coordinates = buoy_coordinates
+        self.calibration_coefficients = calibration_coefficients
         #
         buttons_num = 4
         #
@@ -376,11 +377,6 @@ class SelectTemplate(QWidget):
             self.add_button.setEnabled(False)
 
     def detect_object_on_photo(self):
-        """ Funkcja
-
-        :return:
-        """
-        #
         binary_buoy = Buoy()
         #
         binary_buoy.detect(self.binary_image, False)
@@ -548,8 +544,8 @@ class SelectTemplate(QWidget):
 
         buoy.set_size(self.roi_selected_by_user.height)
         buoy.ranges = self.range_list
-        video = Video('C:/Users/dudziec/PycharmProjects/Inżynierka/inz/img/boja_n.mp4', self.operations,
-                      self.yacht_coordinates, self.buoy_coordinates)
+        video = Video(1, self.operations,
+                      self.yacht_coordinates, self.buoy_coordinates, self.calibration_coefficients)
 
         video.capture(self.binary_image, buoy)
         video.clean()

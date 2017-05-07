@@ -8,8 +8,6 @@ class Buoy:
         self.width = width
         self.height = height
         self.distance = distance
-        # folder
-        # self.ratio = 0.78
         # buoy
         self.ratio = 0.5
         # cube
@@ -21,24 +19,20 @@ class Buoy:
         self.height = height
 
     def compute_distance(self, template):
-        real_height = 1.5
+        # real_height = 1.5
         real_height_cube = 0.06
-        real_height_folder = 0.32
         distance = 0
-        f = 2.08
-        f = (template.height * template.distance) / real_height
+        f = (template.height * template.distance) / real_height_cube
         if self.height != 0:
-            distance = (real_height * f) / self.height
-            print(str(distance) + "m")
-        # distance = 50 / 1000
-        return distance
-
-    def get_pixel_size(self):
-        pass
+            distance = (real_height_cube * f) / self.height
+            # print(str(distance) + "m")
+        dist = distance / 1000
+        return dist
 
     def detect(self, frame, video):
         mask = frame.mask.copy()
         cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+        x, y = 0, 0
         if len(cnts) > 0:
             c = max(cnts, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(c)
@@ -48,10 +42,7 @@ class Buoy:
                 if video:
                     self.set_size(radius * 2)
                 self.draw_rectangle(x, y, frame)
-            detected = True
-        else:
-            detected = False
-        return detected
+        return [x, y]
 
     def draw_circle(self, frame):
         pass
