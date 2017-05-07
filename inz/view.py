@@ -110,7 +110,7 @@ class SelectTemplate(QWidget):
     in order to calculate distance on video.
     """
 
-    def __init__(self, buttons_num):
+    def __init__(self, yacht_coordinates, buoy_coordinates):
         """ Object initializer.
 
 
@@ -118,6 +118,12 @@ class SelectTemplate(QWidget):
         """
         super().__init__()
 
+        self.yacht_coordinates = yacht_coordinates
+        self.buoy_coordinates = buoy_coordinates
+        #
+        buttons_num = 4
+        #
+        self.operations = []
         # Window title
         self.setWindowTitle("Wybieranie wzorca")
         # Path to photo with buoy to detect (template)
@@ -147,13 +153,11 @@ class SelectTemplate(QWidget):
         self.range_text_edit.setReadOnly(True)
 
         # State handling buttons
-        self.back_button = QPushButton(QIcon(QPixmap('../icons/back.png')), "")
         self.add_button = QPushButton(QIcon(QPixmap('../icons/add.png')), "")
 
-        self.state_handling_buttons = [self.back_button, self.add_button]
+        self.state_handling_buttons = [self.add_button]
 
         # Connect state handling buttons
-        self.back_button.clicked.connect(self.on_back_button_clicked)
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
         # Morphological operation buttons
@@ -171,7 +175,6 @@ class SelectTemplate(QWidget):
 
         morphological_operations_label = QLabel()
 
-        # TODO: wymyśl sensowniejsze nazwy
         self.selected_img_label = QLabel()
         self.template_image = QLabel()
         self.binary_img_label = QLabel()
@@ -181,8 +184,8 @@ class SelectTemplate(QWidget):
         blank = QPixmap('img/blank.jpg')
         scaled_blank = blank.scaled(QSize(self.selected_img_label.size()), Qt.KeepAspectRatio, Qt.FastTransformation)
 
-        blank_spaces = [[QLabel("Zaznaczona boja:"), self.selected_img_label],
-                        [QLabel("Wzorzec:"), self.template_image],
+        blank_spaces = [[QLabel("Wzorzec"), self.selected_img_label],
+                        [QLabel("Zaznaczona boja:"), self.template_image],
                         [QLabel("Po binaryzacji:"), self.binary_img_label],
                         [QLabel("Wykryta boja:"), self.detected_buoy_img_label]]
 
@@ -192,7 +195,7 @@ class SelectTemplate(QWidget):
             self.grid.addWidget(blank_space[1], 1, number * 3, 5, 3)
 
         self.hue = DoubleSlider("Hue")
-        self.hue.set_range(170, 180)
+        self.hue.set_range(165, 185)
         self.hue.upper_slider.setMaximum(360)
         self.saturation = DoubleSlider("Saturation")
         self.saturation.set_range(150, 250)
@@ -218,7 +221,7 @@ class SelectTemplate(QWidget):
 
         #
         self.detect_button = QPushButton(QIcon(QPixmap('../icons/play.png')), "")
-        self.detect_button.clicked.connect(lambda: self.detect_clicked(self.image_path[0]))
+        self.detect_button.clicked.connect(self.detect_clicked)
         self.detect_button.setMinimumHeight(140)
 
         self.grid.addWidget(self.explorer_button, 6, 5, 1, 4)
@@ -238,8 +241,7 @@ class SelectTemplate(QWidget):
         self.grid.addWidget(close_button, 11, 6)
 
         # Add state handling buttons to grid
-        self.grid.addWidget(self.add_button, 6, 3)
-        self.grid.addWidget(self.back_button, 6, 4)
+        self.grid.addWidget(self.add_button, 6, 3, 1, 2)
 
         #
         self.grid.addWidget(self.range_auto_detect, 10, 0, 1, 3)
@@ -287,14 +289,6 @@ class SelectTemplate(QWidget):
                 button.setEnabled(True)
 
         self.template_distance = sender.number
-
-    def on_back_button_clicked(self):
-        """ Function handles on back_button clicked event.
-
-
-        :return:
-        """
-        pass
 
     def detect_colors(self):
         hues = []
@@ -353,8 +347,6 @@ class SelectTemplate(QWidget):
         self.range_text_edit.setText(self.range_text_edit.toPlainText() + self.current_text)
 
         # binaryzacja obrazu kolory na obrazie poza zakresem będą czarne, a z zakresu białe
-        # self.binary_image.in_range(lower, upper)
-        # testujemy
         self.binary_image.in_range([[lower, upper]])
 
         # jeżeli stan jest rózny od zera to znaczy że była więcej niż jedna zmiana
@@ -370,13 +362,6 @@ class SelectTemplate(QWidget):
         self.masks.append(new_mask)
         # Add mask to masks list
         self.current_state += 1
-
-        # reperezentacja boi na obrazie binarnym
-        # binary_buoy = Buoy()
-
-        # wykrywanie boi na obrazie binarnym
-        # cv2.imshow('bin', self.binary_image.mask)
-        # binary_buoy.detect(self.binary_image, False)
 
         # zapisywanie do pliku obrazu binarnego i obrazu z wykrytą boją
         cv2.imwrite(BINARY_FILENAME, new_mask)
@@ -422,12 +407,20 @@ class SelectTemplate(QWidget):
         types_dict = {'erosion': image.erode, 'dilation': image.dilate,
                       'opening': image.opening, 'closing': image.closing}
 
+        # słownik zawierający nazwe operacji -> funkcja wykonująca tę operację
+        # utworzony w celu zapamiętania operacji przeprowadzonej na wzorcu i odtworzenia
+        # tych samych operacji na każdej klatce obrazu z kamery
+        video_types_dict = {'erosion': self.binary_image.erode, 'dilation': self.binary_image.dilate,
+                            'opening': self.binary_image.opening, 'closing': self.binary_image.closing}
         # zapisywanie informacji do pola tekstowego
         self.range_text_edit.setText(str(self.range_text_edit.toPlainText() + operation_type.capitalize() + "\n"))
         # liczba przeprowadzonych operacji na obrazie wzrasta o 1
         self.current_state += 1
         # wywołanie funkcji ze słownika
         types_dict[operation_type](kernel_size, iterations)
+        # dodaj przeprowadzoną operację do listy
+        operation = functools.partial(video_types_dict[operation_type], kernel_size)
+        self.operations.append(operation)
         # zapisanie nowego obrazu binarnego do pliku
         cv2.imwrite(BINARY_FILENAME, self.binary_image.mask)
         # wyświetlenie nowego obrazu binarnego na ekranie
@@ -454,9 +447,10 @@ class SelectTemplate(QWidget):
 
     @staticmethod
     def crop_template(filename):
-        """Marks area selected by user.
+        """ Zaznacza obszar wybrany przez użytkownika.
 
-        This function helps extract buoy on image and separate it from the background.
+        Funkcja pomaga wyodrębnić boję na zdjęciu.
+        Zwraca zaznaczony obszar.
         """
 
         def mouse_handler(event, x, y, flags=None, param=None):
@@ -498,11 +492,11 @@ class SelectTemplate(QWidget):
 
         return roi
 
-    # TODO: Document it!
-
     def explorer_clicked(self):
-        """
-        :return:
+        """ Obsługa przycisku "explorer button".
+
+        Po przyciśnięciu na przycisk otwierane jest okno dialogowe do wybrania pliku.
+        Plik to zdjęcie boi zrobione z określonej odległości.
         """
 
         # select file
@@ -512,7 +506,6 @@ class SelectTemplate(QWidget):
         # split path to extract filename
         path, file = os.path.split(self.image_path[0])
 
-        #
         self.original = cv2.imread(file)
         copy = self.original.copy()
         # crop field selected by user and save it to variable roi
@@ -523,58 +516,41 @@ class SelectTemplate(QWidget):
         self.roi_selected_by_user = Buoy(width=roi_width, height=roi_heigth)
 
         cv2.imwrite('roi.jpg', self.roi)
-        #
         cropped_buoy = QPixmap('roi.jpg')
 
-        #
         scaled_image = cropped_buoy.scaled(QSize(self.selected_img_label.size()), Qt.KeepAspectRatio, Qt.FastTransformation)
-
-        #
         self.template_image.setPixmap(scaled_image)
-
-        #
         self.photo = QPixmap(self.image_path[0])
-        #
         self.scaled_photo = self.photo.scaled(QSize(self.selected_img_label.size()), Qt.KeepAspectRatio, Qt.FastTransformation)
-        #
         self.selected_img_label.setPixmap(self.scaled_photo)
 
-        #
         self.binary_image = Frame(copy)
 
-        #
         self.binary_image.blur()
-        # self.binary_image.in_range(lower=[0, 0, 0], upper=[0, 0, 0])
         self.binary_image.in_range([[[0, 0, 0], [0, 0, 0]]])
 
         self.masks.append(self.binary_image.mask)
         self.current_state += 1
-        #
         for button in self.distance_buttons:
             button.show()
 
-        #
         self.distance_label.show()
-        #
         self.after_photo_selection_state()
 
-    def detect_clicked(self, path):
+    def detect_clicked(self):
+        """ Funkcja obsłuująca wciśnięcie przycisku 'Start'.
+
+        Funkcja rozpoczyna przetwarzanie obrazu dostarczonego z wybranego źródłą (kamery internetowej lub
+        nagrania wideo).
         """
 
-        :param path:
-        :return:
-        """
+        buoy = Buoy(distance=self.template_distance)
 
-        buoy = Buoy(distance=0.5)
         buoy.set_size(self.roi_selected_by_user.height)
         buoy.ranges = self.range_list
+        video = Video('C:/Users/dudziec/PycharmProjects/Inżynierka/inz/img/boja_n.mp4', self.operations,
+                      self.yacht_coordinates, self.buoy_coordinates)
 
-        # automatyczne wykrywanie
-        # buoy.detect(template, False)
-        operations = [self.binary_image.text]
-        video = Video('C:/Users/dudziec/PycharmProjects/Inżynierka/inz/img/boja_n.mp4', operations)
-        # video = Video(1)
-        self.binary_image.text()
         video.capture(self.binary_image, buoy)
         video.clean()
 

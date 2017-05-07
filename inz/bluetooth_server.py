@@ -6,7 +6,7 @@ _UUID = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
 
 class BluetoothServer:
-    """ This class represents server in bluetooth communication."""
+    """ Klasa reprezentująca serwer w komunikacji Bluetooth"""
 
     def __init__(self, yacht_coordinates, buoy_coordinates):
         """ This function initializes communication between server and client.
@@ -57,7 +57,7 @@ class BluetoothServer:
                 # set yacht coordinates with received data
                 self.yacht_coordinates.set_coordinates([float(req[0]), float(req[1])], float(req[2]))
                 # set buoy coordinates with yacht coordinates with random generated shift
-                self.buoy_coordinates.set_random_buoy_coordinates(self.yacht_coordinates)
+
                 # prepare data to send
                 data = str(self.buoy_coordinates)
                 # if buoy coordinates exist (buoy has been detected)
@@ -76,3 +76,9 @@ class BluetoothServer:
                 self.client_sock.close()
                 self.server_sock.close()
                 break
+
+
+# yacht_coordinates = Coordinates()
+# buoy_coordinates = Coordinates()
+# bluetooth_server = BluetoothServer(yacht_coordinates, buoy_coordinates)
+# bluetooth_server.handle_data()

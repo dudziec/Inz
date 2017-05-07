@@ -14,7 +14,7 @@ def video_capture_function():
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    SelectTemplate(4)
+    SelectTemplate(yacht_coordinates, buoy_coordinates)
     app.exec_()
 
 
