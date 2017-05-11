@@ -41,7 +41,9 @@ class Coordinates:
         return "{}, {}".format(self.latitude, self.longitude)
 
     def set_from_vincenty_formulae(self, initial_coordinates, distance):
-        azimuth = (abs(initial_coordinates.azimuth - 360.0) + 85) % 360
+        # azimuth = (abs(initial_coordinates.azimuth - 360.0) + 85) % 360
+        # test it
+        azimuth = abs((initial_coordinates.azimuth - 360.0) - 65)
         # azimuth = initial_coordinates.azimuth
         point = VincentyDistance(kilometers=distance).destination(Point(initial_coordinates.latitude,
                                                                         initial_coordinates.longitude),
