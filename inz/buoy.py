@@ -10,24 +10,21 @@ class Buoy:
         self.distance = distance
         # buoy
         self.ratio = 0.5
-        # cube
-        # self.ratio = 1
         self.ranges = []
+        self.center = [0, 0]
 
     def set_size(self, height):
         self.width = height * self.ratio
         self.height = height
 
     def compute_distance(self, template):
-        # real_height = 1.5
-        real_height_cube = 0.06
+        real_height = 1.2
         distance = 0
-        f = (template.height * template.distance) / real_height_cube
+        f = (template.height * template.distance) / real_height
         if self.height != 0:
-            distance = (real_height_cube * f) / self.height
-            # print(str(distance) + "m")
-        dist = distance / 1000
-        return dist
+            distance = (real_height * f) / self.height
+        distance_in_km = distance / 1000
+        return distance_in_km
 
     def detect(self, frame, video):
         mask = frame.mask.copy()
@@ -37,6 +34,7 @@ class Buoy:
             c = max(cnts, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(c)
             if radius > 10:
+                self.center = [x, y]
                 cv2.circle(frame.image, (int(x), int(y)), int(radius),
                            (0, 255, 255), 2)
                 if video:

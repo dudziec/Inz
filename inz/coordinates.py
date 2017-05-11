@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from random import randint, random
 from math import asin, cos, pi, sin, radians, degrees
 from numpy.random.mtrand import randint
@@ -40,7 +41,8 @@ class Coordinates:
         return "{}, {}".format(self.latitude, self.longitude)
 
     def set_from_vincenty_formulae(self, initial_coordinates, distance):
-        azimuth = abs(initial_coordinates.azimuth - 360.0 - 100) % 360
+        azimuth = (abs(initial_coordinates.azimuth - 360.0) + 85) % 360
+        # azimuth = initial_coordinates.azimuth
         point = VincentyDistance(kilometers=distance).destination(Point(initial_coordinates.latitude,
                                                                         initial_coordinates.longitude),
                                                                   azimuth)

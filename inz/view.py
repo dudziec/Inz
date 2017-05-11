@@ -196,12 +196,12 @@ class SelectTemplate(QWidget):
             self.grid.addWidget(blank_space[1], 1, number * 3, 5, 3)
 
         self.hue = DoubleSlider("Hue")
-        self.hue.set_range(165, 185)
+        self.hue.set_range(158, 185)
         self.hue.upper_slider.setMaximum(360)
         self.saturation = DoubleSlider("Saturation")
-        self.saturation.set_range(150, 250)
+        self.saturation.set_range(160, 255)
         self.value = DoubleSlider("Value")
-        self.value.set_range(150, 250)
+        self.value.set_range(160, 255)
 
         #
         self.distance_label = QLabel()
@@ -508,8 +508,9 @@ class SelectTemplate(QWidget):
         self.roi = self.crop_template(file)
         cv2.cvtColor(self.roi, cv2.COLOR_BGR2HSV)
         # wycinek zaznaczony przez użytkownika
-        roi_width, roi_heigth, _ = self.roi.shape
+        roi_heigth, roi_width, _ = self.roi.shape
         self.roi_selected_by_user = Buoy(width=roi_width, height=roi_heigth)
+        print(roi_width, roi_heigth)
 
         cv2.imwrite('roi.jpg', self.roi)
         cropped_buoy = QPixmap('roi.jpg')
@@ -544,11 +545,13 @@ class SelectTemplate(QWidget):
 
         buoy.set_size(self.roi_selected_by_user.height)
         buoy.ranges = self.range_list
-        video = Video(1, self.operations,
+        # video = Video("C:\\Users\\dudziec\\PycharmProjects\\Inżynierka\\inz\\sr\\od30mFULLHD.mp4", self.operations,
+        #               self.yacht_coordinates, self.buoy_coordinates, self.calibration_coefficients)
+        video = Video(0, self.operations,
                       self.yacht_coordinates, self.buoy_coordinates, self.calibration_coefficients)
-
         video.capture(self.binary_image, buoy)
         video.clean()
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+#

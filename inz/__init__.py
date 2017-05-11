@@ -42,7 +42,7 @@ if __name__ == "__main__":
     objpoints = []  # punkty 3d ze świata rzeczywistego
     imgpoints = []  # punkty 2d na płaszczyźnie obrazu
 
-    images = ["coordination_images/image1.jpg", "coordination_images/image1.jpg", "coordination_images/image3.jpg"]
+    images = ["coordination_images/image2.jpg"]
 
     for fname in images:
         img = cv2.imread(fname)
@@ -56,10 +56,11 @@ if __name__ == "__main__":
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
             imgpoints.append(corners2)
             img = cv2.drawChessboardCorners(img, (9, 7), corners2, ret)
+            print("Kalibracja...")
 
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-    img = cv2.imread('coordination_images/image1.jpg')
+    img = cv2.imread('coordination_images/image2.jpg')
 
     h, w = img.shape[:2]
 
@@ -67,6 +68,11 @@ if __name__ == "__main__":
 
     calibration_coefficients = [mtx, dist, newcameramtx, roi]
 
+    fr = cv2.undistort(img, mtx, dist, None, newcameramtx)
+    x, y, w, h = roi
+    fr = fr[y:y + h, x:x + w]
+
+    # cv2.imwrite('image.jpg', fr)
     yacht_coordinates = Coordinates()
     buoy_coordinates = Coordinates()
 
