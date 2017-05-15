@@ -111,57 +111,42 @@ class SelectTemplate(QWidget):
     """
 
     def __init__(self, yacht_coordinates, buoy_coordinates, calibration_coefficients):
-        """ Object initializer.
-
-
-        :param buttons_num:
-        """
         super().__init__()
 
         self.yacht_coordinates = yacht_coordinates
         self.buoy_coordinates = buoy_coordinates
         self.calibration_coefficients = calibration_coefficients
-        #
+
         buttons_num = 4
-        #
+
         self.operations = []
-        # Window title
         self.setWindowTitle("Wybieranie wzorca")
-        # Path to photo with buoy to detect (template)
         self.image_path = ""
-        #
         self.roi_selected_by_user = None
-        # Distance from which photo was taken
         self.template_distance = 0
-        # Main grid layout
         self.grid = QGridLayout()
-        #
+
         self.current_state = 0
-        # thi
+
         self.masks = []
-        #
+
         hsv_ranges_label = QLabel()
 
-        #
         self.range_auto_detect = QPushButton("Wykryj automatycznie")
         self.range_auto_detect.setStyleSheet("color: blue")
         self.range_auto_detect.clicked.connect(self.detect_colors)
 
-        # List contains ranges of HSV color palette
         self.range_list = []
         self.range_text_edit = QTextEdit()
         self.current_text = ""
         self.range_text_edit.setReadOnly(True)
 
-        # State handling buttons
         self.add_button = QPushButton(QIcon(QPixmap('../icons/add.png')), "")
 
         self.state_handling_buttons = [self.add_button]
 
-        # Connect state handling buttons
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
-        # Morphological operation buttons
         erode_button = QPushButton("Erode")
         dilate_button = QPushButton("Dilate")
         open_button = QPushButton("Opening")
@@ -181,7 +166,6 @@ class SelectTemplate(QWidget):
         self.binary_img_label = QLabel()
         self.detected_buoy_img_label = QLabel()
 
-        # blank image prepares empty space for images
         blank = QPixmap('img/blank.jpg')
         scaled_blank = blank.scaled(QSize(self.selected_img_label.size()), Qt.KeepAspectRatio, Qt.FastTransformation)
 
@@ -203,11 +187,9 @@ class SelectTemplate(QWidget):
         self.value = DoubleSlider("Value")
         self.value.set_range(160, 255)
 
-        #
         self.distance_label = QLabel()
         self.distance_label.hide()
 
-        # User choose from which distance photo was taken
         self.distance_buttons = [QPushButton("{} m".format(num+1)) for num in range(buttons_num)]
 
         for num, button in enumerate(self.distance_buttons):
@@ -216,11 +198,9 @@ class SelectTemplate(QWidget):
             button.clicked.connect(self.distance_button_clicked)
             self.grid.addWidget(button, 11, num + 7)
 
-        #
         self.explorer_button = QPushButton(QIcon(QPixmap('../icons/file_explorer.png')), "")
         self.explorer_button.clicked.connect(self.explorer_clicked)
 
-        #
         self.detect_button = QPushButton(QIcon(QPixmap('../icons/play.png')), "")
         self.detect_button.clicked.connect(self.detect_clicked)
         self.detect_button.setMinimumHeight(140)
@@ -234,19 +214,15 @@ class SelectTemplate(QWidget):
 
         self.grid.addWidget(self.range_text_edit, 7, 3, 3, 6)
 
-        # Add morphological operation buttons to grid
-
         self.grid.addWidget(erode_button, 11, 3)
         self.grid.addWidget(dilate_button, 11, 4)
         self.grid.addWidget(open_button, 11, 5)
         self.grid.addWidget(close_button, 11, 6)
 
-        # Add state handling buttons to grid
         self.grid.addWidget(self.add_button, 6, 3, 1, 2)
 
-        #
         self.grid.addWidget(self.range_auto_detect, 10, 0, 1, 3)
-        #
+
         self.set_widget(hsv_ranges_label, "Wybierz zasięg kolorów:", self.grid, 6, 0, 1, 3)
         self.set_widget(morphological_operations_label, "Operacje morfologiczne:", self.grid, 10, 3, 1, 4)
         self.set_widget(self.distance_label, "Dystans od boi", self.grid, 10, 7, 1, 4)
@@ -327,20 +303,13 @@ class SelectTemplate(QWidget):
         :return:
         """
 
-        # Lists declaration
-        # Lower - minimum values of HSV components
-        # Upper - maximum values of HSV components
         lower, upper = [], []
 
-        # zamiana zasięgu każdego typu na listy zawierające tylko najmniejsze i tylko największe wartości
-        # zasięg górny i dolny
         for i in [self.hue, self.saturation, self.value]:
             lower.append(i.get_range()[0])
             upper.append(i.get_range()[1])
 
-        # add new range to list of all ranges
         self.range_list.append([lower, upper])
-        # create new text with new data on the end
         self.current_text = "Hue: ({}, {}) Saturation ({}, {}) Value ({}, {})\n".format(lower[0], upper[0],
                                                                                         lower[1], upper[1],
                                                                                         lower[2], upper[2])
@@ -378,11 +347,8 @@ class SelectTemplate(QWidget):
 
     def detect_object_on_photo(self):
         binary_buoy = Buoy()
-        #
         binary_buoy.detect(self.binary_image, False)
-        #
         cv2.imwrite(DETECTED_FILENAME, self.binary_image.image)
-        #
         self.refresh_image(DETECTED_FILENAME, self.detected_buoy_img_label)
 
     def perform_morphological_operation(self, operation_type, image, kernel_size, iterations=1):
@@ -495,22 +461,20 @@ class SelectTemplate(QWidget):
         Plik to zdjęcie boi zrobione z określonej odległości.
         """
 
-        # select file
         dialog = QFileDialog()
         self.image_path = dialog.getOpenFileName(self, 'Wybierz zdjęcie', os.getenv('HOME/img'), 'JPG(*.jpg)')
 
-        # split path to extract filename
         path, file = os.path.split(self.image_path[0])
 
         self.original = cv2.imread(file)
+
         copy = self.original.copy()
-        # crop field selected by user and save it to variable roi
+
         self.roi = self.crop_template(file)
         cv2.cvtColor(self.roi, cv2.COLOR_BGR2HSV)
-        # wycinek zaznaczony przez użytkownika
+
         roi_heigth, roi_width, _ = self.roi.shape
         self.roi_selected_by_user = Buoy(width=roi_width, height=roi_heigth)
-        print(roi_width, roi_heigth)
 
         cv2.imwrite('roi.jpg', self.roi)
         cropped_buoy = QPixmap('roi.jpg')
@@ -545,8 +509,6 @@ class SelectTemplate(QWidget):
 
         buoy.set_size(self.roi_selected_by_user.height)
         buoy.ranges = self.range_list
-        # video = Video("C:\\Users\\dudziec\\PycharmProjects\\Inżynierka\\inz\\sr\\od30mFULLHD.mp4", self.operations,
-        #               self.yacht_coordinates, self.buoy_coordinates, self.calibration_coefficients)
         video = Video(0, self.operations,
                       self.yacht_coordinates, self.buoy_coordinates, self.calibration_coefficients)
         video.capture(self.binary_image, buoy)
@@ -554,4 +516,3 @@ class SelectTemplate(QWidget):
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-#

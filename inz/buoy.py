@@ -18,13 +18,14 @@ class Buoy:
         self.height = height
 
     def compute_distance(self, template):
-        real_height = 1.2
+        real_height = 1.1
         distance = 0
+        print(self.height)
         f = (template.height * template.distance) / real_height
         if self.height != 0:
             distance = (real_height * f) / self.height
-        distance_in_km = distance / 1000
-        return distance_in_km
+
+        return distance
 
     def detect(self, frame, video):
         mask = frame.mask.copy()
@@ -41,9 +42,6 @@ class Buoy:
                     self.set_size(radius * 2)
                 self.draw_rectangle(x, y, frame)
         return [x, y]
-
-    def draw_circle(self, frame):
-        pass
 
     def draw_rectangle(self, x, y, frame):
         x1 = int(x - self.width / 2)

@@ -23,9 +23,9 @@ class Video:
         while True:
             (grabbed, fr) = self.vc.read()
 
-            # fr = cv2.undistort(fr, self.mtx, self.dist, None, self.newcameramtx)
-            # x, y, w, h = self.roi
-            # fr = fr[y:y + h, x:x + w]
+            fr = cv2.undistort(fr, self.mtx, self.dist, None, self.newcameramtx)
+            x, y, w, h = self.roi
+            fr = fr[y:y + h, x:x + w]
 
             i += 1
 
@@ -53,8 +53,6 @@ class Video:
 
             distance = self.calculate_distance(MAST_HEIGHT, distance)
 
-            # Zaznacz kąt
-
             x = int(self.buoy.center[0])
 
             cv2.line(frame.image, (x, 0), (x, h), (0, 255, 0), 2)
@@ -62,8 +60,8 @@ class Video:
 
             angle = self.calculate_angle(CAMERA_ANGLE, x, w)
 
-            cv2.putText(frame.image, "Dystans: " + str(distance)[0:4] + "m", (50, 50), cv2.FONT_HERSHEY_COMPLEX, 1, 255)
-            cv2.putText(frame.image, "Korekta a1zymutu: {} stopni".format(str(int(angle))), (50, 100), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
+            cv2.putText(frame.image, "Dystans: " + str(distance)[0:6] + "m", (50, 50), cv2.FONT_HERSHEY_COMPLEX, 1, 255)
+            cv2.putText(frame.image, "Korekta a1zymutu: {} stopni".format(str(int(angle))), (50, 200), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
 
             if self.yacht_coordinates.azimuth != 0:
                 cv2.putText(frame.image, "Azymut: " + str(self.yacht_coordinates.azimuth), (50, 150), cv2.FONT_HERSHEY_COMPLEX, 1,
@@ -93,6 +91,7 @@ class Video:
     @staticmethod
     def calculate_distance(mast_height, distance_from_camera):
         real_distance = math.sqrt(distance_from_camera**2 - mast_height**2)
+        real_distance /= 1000
         return real_distance
 
     @staticmethod

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from random import randint, random
-from math import asin, cos, pi, sin, radians, degrees
 from numpy.random.mtrand import randint
 from geopy.distance import VincentyDistance
 from geopy.distance import Point
@@ -17,22 +16,11 @@ class Coordinates:
         self.azimuth = 0
 
     def set_coordinates(self, coordinates, azimuth=0):
-        """
-
-        :param coordinates:
-        :param azimuth:
-        :return:
-        """
         self.latitude = coordinates[0]
         self.longitude = coordinates[1]
         self.azimuth = azimuth
 
     def set_random_buoy_coordinates(self, yacht_coordinates):
-        """
-
-        :param yacht_coordinates:
-        :return:
-        """
         shift = randint(0, 100) / 100000
         self.latitude = yacht_coordinates.latitude + shift
         self.longitude = yacht_coordinates.longitude + shift
@@ -41,10 +29,7 @@ class Coordinates:
         return "{}, {}".format(self.latitude, self.longitude)
 
     def set_from_vincenty_formulae(self, initial_coordinates, distance):
-        # azimuth = (abs(initial_coordinates.azimuth - 360.0) + 85) % 360
-        # test it
-        azimuth = abs((initial_coordinates.azimuth - 360.0) - 65)
-        # azimuth = initial_coordinates.azimuth
+        azimuth = abs((initial_coordinates.azimuth - 360.0) - 90)
         point = VincentyDistance(kilometers=distance).destination(Point(initial_coordinates.latitude,
                                                                         initial_coordinates.longitude),
                                                                   azimuth)

@@ -9,11 +9,6 @@ calibration_coefficients = []
 
 
 def video_capture_function():
-    """
-
-    :return:
-    """
-
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     SelectTemplate(yacht_coordinates, buoy_coordinates, calibration_coefficients)
@@ -21,10 +16,6 @@ def video_capture_function():
 
 
 def run_server():
-    """
-
-    :return:
-    """
     bluetooth_server = BluetoothServer(yacht_coordinates, buoy_coordinates)
     bluetooth_server.handle_data()
 
@@ -72,7 +63,6 @@ if __name__ == "__main__":
     x, y, w, h = roi
     fr = fr[y:y + h, x:x + w]
 
-    # cv2.imwrite('image.jpg', fr)
     yacht_coordinates = Coordinates()
     buoy_coordinates = Coordinates()
 

@@ -68,17 +68,10 @@ class BluetoothServer:
                 time.sleep(1)
 
             except IOError:
-                # Input/Output error!
                 print("IOERROR")
 
             except KeyboardInterrupt:
-                # Closing sockets.
                 self.client_sock.close()
                 self.server_sock.close()
                 break
 
-
-# yacht_coordinates = Coordinates()
-# buoy_coordinates = Coordinates()
-# bluetooth_server = BluetoothServer(yacht_coordinates, buoy_coordinates)
-# bluetooth_server.handle_data()
